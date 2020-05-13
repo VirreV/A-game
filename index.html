@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.15.1/dist/phaser-arcade-physics.min.js"></script>
+</head>
+<body>
+    <script>
+        var config = {
+            type: Phaser.AUTO,
+            width: 800,
+            height: 600,
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    gravity: { y: 1400 },
+                    debug: false
+                }
+            },
+            scene: {
+                preload: preload,
+                create: create,
+                update: update
+            }
+        };
+
+        var game = new Phaser.Game(config);
+        let xDir = 0;
+        let rightKey = 0;
+        let leftKey = 0;
+        let jump = 0;
+        let wallJumped = false;
+
+        let score = 0;
+        var scoreText;
+        let deaths = 0;
+        var deathsText;
+
+        function preload ()
+        {
+            this.load.image('sky', "https://examples.phaser.io/assets/skies/sky1.png");
+            this.load.image('ground', "https://examples.phaser.io/assets/sprites/platform.png");
+            this.load.image('player', "https://examples.phaser.io/assets/sprites/32x32.png");
+            this.load.image('star', "https://examples.phaser.io/assets/bristoljs/yellow.png");
+        }
+
+        function create ()
+        {
+            this.add.image(config.width/2, config.height/2, 'sky');
+
+            platforms = this.physics.add.staticGroup();
+
+            platforms.create(0, 500, 'ground').setOrigin(0, 0).refreshBody();
+            platforms.create(500, 0, 'ground').setOrigin(0, 0).setScale(7).refreshBody();
+            platforms.create(-100, 300, 'ground').setOrigin(0, 0).refreshBody();
+
+            player = this.physics.add.sprite(100, 450, 'player');
+            player.setBounce(0);
+            player.setCollideWorldBounds(true);
+
+            star = this.physics.add.staticGroup();
+            star.create(100, 210, 'star').setScale(0.3).refreshBody();
+            star.create(400, 50, 'star').setScale(0.3).refreshBody();
+
+            this.physics.add.collider(player, platforms);
+            cursors = this.input.keyboard.createCursorKeys();
+
+            this.physics.add.overlap(player, star, collectScore, null, this);
+
+            scoreText = this.add.text(16, 16, 'Score: 0', {fontSize: '32px', fill: '#000' });
+            deathsText = this.add.text(16, 52, 'Deaths: 0', { fontSize: '32px', fill: '#000' });
+        }
+
+        function update ()
+        {
+            if (cursors.left.isDown || cursors.right.isDown)
+            {
+                //if(player.body.velocity.x == 0){
+                    player.setVelocityX(300 * (cursors.right.isDown - cursors.left.isDown));
+                //}
+                //else if(player.body.velocity.x < 300 && player.body.velocity.x > -300){
+                //    player.setVelocityX(Math.abs(player.body.velocity.x) * 1.5 * (cursors.right.isDown - cursors.left.isDown));
+                //}
+            }
+            else
+            {
+                player.setVelocityX(player.body.velocity.x * 0.8);
+            }
+
+            if (cursors.up.isDown && player.body.touching.down)
+            {
+                player.setVelocityY(-600);
+            }
+            else if (cursors.up.isDown && (player.body.touching.right || player.body.touching.left) && !(wallJumped)){
+                player.setVelocityY(-500);
+                wallJumped = true;
+            }
+            if(wallJumped && player.body.touching.down){
+                wallJumped = false;
+            }
+
+            if(player.body.y == config.height - player.displayHeight){
+                deaths += 1;
+                deathsText.setText('Deaths: ' + deaths);
+                player.body.reset(100, 450);
+            }
+        }
+
+        function collectScore(player, star){
+            console.log("score");
+            score++;
+            star.disableBody(true, true);
+            scoreText.setText('Score: ' + score);
+        }
+        </script>
+</body>
+</html>
